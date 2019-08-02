@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="board">
+
+	<select id="list" resultType="boardDto">
+		select * from board	order by no desc
+	</select>
+	
+	<select id="list2" resultType="boardDto" parameterType="map">
+		select * from board	
+		<if test="type != null and keyword != null">
+			where
+			${type} like '%' || #{keyword} || '%'
+		</if>
+			order by 
+				no desc
+	</select>
+	
+	<select id="list3" resultType="boardDto" parameterType="map">
+		select * from board	
+		<if test="type != null and keyword != null">
+			where
+			${type} like '%' || #{keyword} || '%'
+		</if>
+		connect by prior no = parent
+		start with parent is null
+		order siblings by team desc, no asc
+	</select>
+	
+	<select id="list4" parameterType="map" resultType="boardDto">
+		<!-- 부등호 등 태그 형식에서 사용 불가한 글자를 허용하는 지역 생성 -->
+		<![CDATA[
+		select * from(
+			select rownum rn, A.* from (
+				select * from board
+		]]>
+				<if test="type != null and keyword != null">
+				where
+					${type} like '%' || #{keyword} || '%'
+				</if>
+		<![CDATA[
+				connect by prior no=parent
+				start with parent is null
+				order siblings by team desc, no asc
+			)A
+		) where rn >= #{start} and rn <= #{end}
+		]]>
+	</select>
+	
+	<!-- 글 상세보기 -->
+	<select id="get" parameterType="int" resultType="boardDto">
+		select * from board where no = #{no}
+	</select>
+	
+	<!-- 조회수 증가 -->
+	<update id="read" parameterType="int">
+		update board set read = read+1 where no = ${no}
+	</update>
+	
+	<!-- 목록과 검색일 경우 각각의 게시글 수를 구하는 SQL명령 -->
+	<select id="count" parameterType="map" resultType="int">
+		select count(*) from board 
+			<if test="type != null and keyword !=null">
+			where ${type} like '%' || #{keyword} || '%'
+			</if>
+	</select>
+	
+	<!-- 시퀀스 번호 생성 -->
+	<select id="seq" resultType="int">
+		select board_seq.nextval from dual
+	</select>
+	
+	<!-- 글 등록 -->
+	<insert id="insert" parameterType="boardDto">
+		insert into board values(
+			#{no}, #{head}, #{title}, #{writer}, #{content}, sysdate, 0, 
+			<!-- parent가 새글일 때 null로 설정되어야 함(답글일 때는 무관) -->
+			<choose>
+				<when test="parent == 0">
+					null,
+				</when>
+				<otherwise>
+					#{parent},
+				</otherwise>
+			</choose>
+			#{depth}, #{team}
+		)
+	</insert>
+	
+	<delete id="delete" parameterType="int">
+		delete board where no = #{no}
+	</delete>
+
+	<update id="edit" parameterType="boardDto">
+		update board 
+			set
+				head = #{head},
+				title = #{title},
+				content = #{content}
+			where
+			 	no = #{no} 
+	</update>
+
+</mapper>

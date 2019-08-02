@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!-- 
+	이 파일은 SQL 명령만 보관하는 파일
+	따라서 외부에서 접근할 수 있도록 namespace를 지정
+ -->
+<mapper namespace="member">
+
+	<insert id="regist" parameterType="memberDto">
+		insert into member values(
+		member_seq.nextval, 
+		#{email}, #{pw}, #{name}, #{birth}, #{phone},
+		#{question}, #{answer}, sysdate, '일반', sysdate
+		)
+	</insert>
+	
+	<select id="login" parameterType="memberDto" resultType="memberDto">
+		select * from member where email=#{email} and pw=#{pw}
+	</select>
+	
+	<select id="info" resultType="memberDto" parameterType="string">
+		select*from member where email=#{email}
+	</select>
+	
+	<delete id="delete" parameterType="string">
+		delete member where email =#{email}
+	</delete>
+	
+	<!-- 핸드폰 번호, 질문, 답변 -->
+	<update id="change" parameterType="memberDto">
+		update member set 
+							phone = #{phone}, 
+							question = #{question}, 
+							answer=#{answer} 
+						where 
+							email = #{email}
+	</update>
+	
+	<!-- 관리자가 회원 검색하는 기능 -->
+	<select id="search" parameterType="map" resultType="memberDto">
+		select * from member
+			 where 
+			 	${type} like '%'|| #{keyword} ||'%' 
+			 order by ${type} asc
+	</select>
+	<!-- 관리자가 회원을 수정하는 명령문 -->
+	<update id="edit" parameterType="memberDto">
+		update member set
+								name = #{name},
+								birth = #{birth},
+								phone = #{phone},
+								question = #{question},
+								answer = #{answer},
+								auth = #{auth}
+							where
+							email = #{email}
+	</update>
+
+</mapper>
+
+
+
